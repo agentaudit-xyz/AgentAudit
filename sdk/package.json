@@ -1,0 +1,48 @@
+{
+  "name": "@agentaudit-xyz/sdk",
+  "version": "0.1.0-alpha",
+  "description": "On-chain audit logging SDK for AI agents. Immutable, verifiable, EU AI Act compliant.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "ai-agents",
+    "audit",
+    "web3",
+    "blockchain",
+    "compliance",
+    "eu-ai-act",
+    "mantle",
+    "arbitrum",
+    "agentaudit",
+    "runlock"
+  ],
+  "author": "AgentAudit <contact@getagentaudit.xyz>",
+  "license": "MIT",
+  "homepage": "https://getagentaudit.xyz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/runlockAI/AgentAudit"
+  },
+  "dependencies": {
+    "ethers": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

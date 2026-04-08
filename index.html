@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgentAudit — On-Chain Audit Logs for AI Agents</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0a0a0a;
+      --surface:   #111111;
+      --border:    #222222;
+      --accent:    #e8ff47;
+      --accent2:   #ff6b35;
+      --text:      #e8e8e8;
+      --muted:     #666666;
+      --mono:      'IBM Plex Mono', monospace;
+      --display:   'Syne', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Grid overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(232,255,71,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232,255,71,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,10,.9);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-logo {
+      font-family: var(--display);
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.5px;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+
+    .nav-links a:hover { color: var(--accent); }
+
+    .nav-cta {
+      background: var(--accent);
+      color: #000;
+      padding: 8px 20px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, transform .1s;
+    }
+
+    .nav-cta:hover { background: #fff; transform: translateY(-1px); }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 120px 40px 80px;
+      overflow: hidden;
+    }
+
+    .hero-tag {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero-tag::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .hero h1 {
+      font-family: var(--display);
+      font-size: clamp(48px, 8vw, 120px);
+      font-weight: 800;
+      line-height: 0.92;
+      letter-spacing: -3px;
+      max-width: 900px;
+      margin-bottom: 40px;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+      position: relative;
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.8;
+      margin-bottom: 48px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      padding: 14px 32px;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, transform .1s;
+      display: inline-block;
+    }
+
+    .btn-primary:hover { background: #fff; transform: translateY(-2px); }
+
+    .btn-secondary {
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 14px 32px;
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color .2s, color .2s;
+      display: inline-block;
+    }
+
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Live log ticker ── */
+    .log-ticker {
+      position: absolute;
+      right: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 340px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 11px;
+    }
+
+    .log-ticker-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      font-size: 10px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .log-entries {
+      padding: 12px 0;
+      max-height: 320px;
+      overflow: hidden;
+    }
+
+    .log-entry {
+      padding: 6px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.03);
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 8px;
+      animation: slideIn .4s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .log-type {
+      color: var(--accent2);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .log-text { color: var(--muted); font-size: 10px; }
+    .log-hash { color: var(--accent); font-size: 10px; }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: flex;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 0 40px;
+    }
+
+    .stat {
+      flex: 1;
+      padding: 32px 24px;
+      border-right: 1px solid var(--border);
+    }
+
+    .stat:last-child { border-right: none; }
+
+    .stat-value {
+      font-family: var(--display);
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    /* ── How it works ── */
+    .section {
+      padding: 100px 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: var(--display);
+      font-size: clamp(32px, 4vw, 56px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1;
+      margin-bottom: 60px;
+      max-width: 600px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .step {
+      background: var(--bg);
+      padding: 40px 32px;
+      transition: background .2s;
+    }
+
+    .step:hover { background: var(--surface); }
+
+    .step-num {
+      font-family: var(--display);
+      font-size: 64px;
+      font-weight: 800;
+      color: var(--border);
+      line-height: 1;
+      margin-bottom: 20px;
+    }
+
+    .step-title {
+      font-family: var(--display);
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+
+    .step-desc { color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+    /* ── Code block ── */
+    .code-section {
+      padding: 100px 40px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .code-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 0;
+      overflow: hidden;
+      max-width: 720px;
+    }
+
+    .code-header {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .code-dots { display: flex; gap: 6px; }
+    .code-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+    .code-dot.r { background: #ff5f56; }
+    .code-dot.y { background: #ffbd2e; }
+    .code-dot.g { background: #27c93f; }
+
+    pre {
+      padding: 28px 24px;
+      font-size: 13px;
+      line-height: 1.8;
+      overflow-x: auto;
+      color: var(--text);
+    }
+
+    .kw { color: var(--accent2); }
+    .str { color: var(--accent); }
+    .cm { color: var(--muted); font-style: italic; }
+    .fn { color: #7ecfff; }
+
+    /* ── Features ── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .feature {
+      background: var(--bg);
+      padding: 36px 32px;
+      transition: background .2s;
+    }
+
+    .feature:hover { background: var(--surface); }
+
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+
+    .feature-title {
+      font-family: var(--display);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .feature-desc { color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+    /* ── CTA ── */
+    .cta-section {
+      padding: 120px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: 'AUDIT';
+      position: absolute;
+      font-family: var(--display);
+      font-size: 30vw;
+      font-weight: 800;
+      color: rgba(232,255,71,.02);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .cta-section h2 {
+      font-family: var(--display);
+      font-size: clamp(36px, 5vw, 72px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-section p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 480px;
+      margin: 0 auto 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-logo {
+      font-family: var(--display);
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    .footer-logo span { color: var(--accent); }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      transition: color .2s;
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy { color: var(--muted); font-size: 11px; }
+
+    @media (max-width: 768px) {
+      nav { padding: 16px 20px; }
+      .nav-links { display: none; }
+      .hero { padding: 100px 20px 60px; }
+      .log-ticker { display: none; }
+      .stats-bar { margin: 0; flex-wrap: wrap; }
+      .stat { min-width: 50%; }
+      .section { padding: 60px 20px; }
+      .code-section { padding: 60px 20px; }
+      .cta-section { padding: 80px 20px; }
+      footer { padding: 30px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <a href="#" class="nav-logo">Agent<span>Audit</span></a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="https://github.com/runlockAI/AgentAudit">GitHub</a></li>
+    <li><a href="https://runlock.ai">RunLockAI</a></li>
+  </ul>
+  <a href="https://github.com/runlockAI/AgentAudit" class="nav-cta">Get Started →</a>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <p class="hero-tag">On-Chain Audit Logging for AI Agents</p>
+  <h1>If your agent made<br />a bad call, can you<br /><em>prove</em> it?</h1>
+  <p class="hero-sub">
+    AgentAudit records every AI agent decision on-chain — immutable, verifiable, and compliant with EU AI Act Articles 9, 13, 14, 15.
+  </p>
+  <div class="hero-actions">
+    <a href="https://github.com/runlockAI/AgentAudit" class="btn-primary">View on GitHub →</a>
+    <a href="#how" class="btn-secondary">How it works</a>
+  </div>
+
+  <!-- Live log ticker -->
+  <div class="log-ticker">
+    <div class="log-ticker-header">
+      <span class="dot"></span>
+      Live audit stream
+    </div>
+    <div class="log-entries" id="logEntries"></div>
+  </div>
+</section>
+
+<!-- ── Stats ── -->
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-value">$45M+</div>
+    <div class="stat-label">Lost to AI agent exploits in Q1 2026</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">0</div>
+    <div class="stat-label">Audit trails existed for those incidents</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">MIT</div>
+    <div class="stat-label">Open source, free forever</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">EVM</div>
+    <div class="stat-label">Mantle, Arbitrum, any EVM chain</div>
+  </div>
+</div>
+
+<!-- ── How it works ── -->
+<section class="section" id="how">
+  <p class="section-label">How it works</p>
+  <h2 class="section-title">Three steps to full accountability</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-title">Register your agent</div>
+      <p class="step-desc">Deploy AuditVault.sol or use the managed contract. Register your agent with a unique ID and metadata in a single transaction.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-title">Log every action</div>
+      <p class="step-desc">Use the TypeScript SDK to log actions before or after execution. Batch logging available for gas efficiency. Supports any EVM chain.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-title">Audit anytime</div>
+      <p class="step-desc">Every action is immutably stored on-chain. Query the full log by agent ID. Export for compliance reports, legal review, or incident response.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Code ── -->
+<section class="code-section">
+  <p class="section-label">Quick start</p>
+  <h2 class="section-title" style="margin-bottom:40px">Up in 5 minutes</h2>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots">
+        <div class="code-dot r"></div>
+        <div class="code-dot y"></div>
+        <div class="code-dot g"></div>
+      </div>
+      agent.ts
+    </div>
+    <pre><span class="cm">// npm install @agentaudit-xyz/sdk</span>
+<span class="kw">import</span> { AgentAudit } <span class="kw">from</span> <span class="str">'@agentaudit-xyz/sdk'</span>
+
+<span class="kw">const</span> audit = <span class="kw">new</span> <span class="fn">AgentAudit</span>({
+  rpcUrl:          <span class="str">'https://rpc.sepolia.mantle.xyz'</span>,
+  contractAddress: <span class="str">'0xYourAuditVaultAddress'</span>,
+  privateKey:      process.env.<span class="fn">AGENT_PRIVATE_KEY</span>,
+})
+
+<span class="cm">// Register once</span>
+<span class="kw">await</span> audit.<span class="fn">registerAgent</span>(<span class="str">'my-defi-agent'</span>, {
+  model:   <span class="str">'gpt-4o'</span>,
+  version: <span class="str">'1.0.0'</span>,
+  owner:   <span class="str">'0xYourWallet'</span>,
+})
+
+<span class="cm">// Log every action</span>
+<span class="kw">const</span> result = <span class="kw">await</span> audit.<span class="fn">logAction</span>({
+  agentId:    <span class="str">'my-defi-agent'</span>,
+  actionType: <span class="str">'TRANSFER'</span>,
+  payload:    { to: <span class="str">'0xabc...'</span>, amount: <span class="str">'500 USDC'</span> },
+})
+
+console.<span class="fn">log</span>(<span class="str">'Logged on-chain:'</span>, result.txHash)</pre>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section class="section" id="features">
+  <p class="section-label">Features</p>
+  <h2 class="section-title">Built for production agents</h2>
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-title">Immutable logs</div>
+      <p class="feature-desc">Every action is written on-chain. No admin key, no deletion. If it happened, it's recorded forever.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Batch logging</div>
+      <p class="feature-desc">Log multiple actions in a single transaction. Optimized for high-frequency agents without breaking the bank on gas.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🇪🇺</div>
+      <div class="feature-title">EU AI Act ready</div>
+      <p class="feature-desc">Satisfies logging requirements under Articles 9, 13, 14, 15, and 17. Export-ready compliance reports.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔗</div>
+      <div class="feature-title">Multi-chain</div>
+      <p class="feature-desc">Deploy AuditVault on Mantle, Arbitrum, or any EVM chain. Use managed contracts or bring your own.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🛡️</div>
+      <div class="feature-title">Part of RunLockAI</div>
+      <p class="feature-desc">Pair with ShieldAI for spend enforcement + audit logging — full runtime security stack for autonomous agents.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📦</div>
+      <div class="feature-title">Open source</div>
+      <p class="feature-desc">MIT licensed. Self-host everything or use managed contracts. No lock-in, no vendor dependency.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+  <h2>Start auditing<br />your agents today.</h2>
+  <p>Free, open source, and ready to deploy on Mantle or Arbitrum in minutes.</p>
+  <div class="cta-actions">
+    <a href="https://github.com/runlockAI/AgentAudit" class="btn-primary">View on GitHub →</a>
+    <a href="mailto:contact@getagentaudit.xyz" class="btn-secondary">contact@getagentaudit.xyz</a>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="footer-logo">Agent<span>Audit</span></div>
+  <ul class="footer-links">
+    <li><a href="https://github.com/runlockAI/AgentAudit">GitHub</a></li>
+    <li><a href="https://getshieldai.xyz">ShieldAI</a></li>
+    <li><a href="https://runlock.ai">RunLockAI</a></li>
+    <li><a href="mailto:contact@getagentaudit.xyz">Contact</a></li>
+  </ul>
+  <p class="footer-copy">© 2026 AgentAudit — Part of the RunLockAI ecosystem</p>
+</footer>
+
+<script>
+  // Live log ticker simulation
+  const entries = [
+    { type: 'TRANSFER',  text: 'agent-0x4f...→ 250 USDC', hash: '0x3a1b...' },
+    { type: 'DAO_VOTE',  text: 'proposal #47 approved',   hash: '0x9c2e...' },
+    { type: 'API_CALL',  text: 'coingecko price fetch',   hash: '0x1f8a...' },
+    { type: 'SWAP',      text: '1.2 ETH → 3100 USDC',    hash: '0x7d4c...' },
+    { type: 'TRANSFER',  text: 'agent-0x9b...→ 80 USDT',  hash: '0x2e5f...' },
+    { type: 'STAKE',     text: '500 MNT staked',          hash: '0x6a3d...' },
+    { type: 'APPROVE',   text: 'ERC20 approval granted',  hash: '0x4b1e...' },
+    { type: 'API_CALL',  text: 'weather data fetched',    hash: '0x8f2c...' },
+  ];
+
+  const container = document.getElementById('logEntries');
+  let idx = 0;
+
+  function addEntry() {
+    const e = entries[idx % entries.length];
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.innerHTML = `<span class="log-type">${e.type}</span><span class="log-text">${e.text} <span class="log-hash">${e.hash}</span></span>`;
+    container.insertBefore(div, container.firstChild);
+    if (container.children.length > 8) container.removeChild(container.lastChild);
+    idx++;
+  }
+
+  for (let i = 0; i < 5; i++) addEntry();
+  setInterval(addEntry, 2200);
+</script>
+
+</body>
+</html>
