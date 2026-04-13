@@ -114,6 +114,24 @@ AgentAudit/
 ├── index.html              ← Landing page (getagentaudit.xyz)
 └── README.md
 ```
+## ElizaOS Integration
+
+AgentAudit is available as a native ElizaOS plugin.
+```bash
+cd plugin-elizaos
+npm install
+```
+
+Add to your ElizaOS agent:
+```javascript
+const agentAuditPlugin = require('./plugin-elizaos');
+// add to plugins array in your ElizaOS config
+```
+
+Every agent message is automatically logged to the blockchain as an immutable audit entry.
+
+✅ **Live on Arbitrum Sepolia** — TX: `0xecb8a7b3676d6e2c24cf1110351de5192a2102ca386ecebba2fe91aa1bfdee5f`
+
 
 ## Supported Networks
 
