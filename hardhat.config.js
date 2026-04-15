@@ -1,3 +1,4 @@
+require("dotenv").config();
 require("@nomicfoundation/hardhat-toolbox");
 
 module.exports = {
@@ -5,8 +6,18 @@ module.exports = {
   networks: {
     arbitrumSepolia: {
       url: "https://sepolia-rollup.arbitrum.io/rpc",
-      accounts: ["0x5fd660240ea63acd32a3fbeb1d1216b32f4d868157bb279f483822bc02485bd2"],
+      accounts: [process.env.PRIVATE_KEY],
       chainId: 421614,
+    },
+    mantleSepolia: {
+      url: "https://rpc.sepolia.mantle.xyz",
+      accounts: [process.env.PRIVATE_KEY],
+      chainId: 5003,
+    },
+    mantle: {
+      url: "https://rpc.mantle.xyz",
+      accounts: [process.env.PRIVATE_KEY],
+      chainId: 5000,
     },
   },
 };
