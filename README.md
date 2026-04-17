@@ -1,4 +1,111 @@
----
+[README (6).md](https://github.com/user-attachments/files/26829905/README.6.md)
+# AgentAudit
+> If your AI agent made a bad call, can you prove it?
+
+Immutable on-chain audit logs for autonomous AI agents.
+
+License: MIT | npm | Part of RunLockAI
+
+Website: getagentaudit.xyz  
+Part of: RunLockAI — the runtime security ecosystem for AI agents
+
+## The Problem
+
+AI agents are executing high-value actions autonomously — transferring funds, voting on proposals, calling APIs, signing transactions. In Q1 2026 alone, $45M+ was lost to AI agent exploits.
+
+When something goes wrong, there is no audit trail. No one can prove what the agent decided, when, or why.
+
+AgentAudit solves this.
+
+## What It Does
+
+AgentAudit writes every agent action to the blockchain — immutable, timestamped, and permanently verifiable.
+
+- Who authorized the action
+- What was decided (action type + payload)
+- When it happened (block timestamp)
+- Where it was executed (block number + tx hash)
+
+Every entry satisfies EU AI Act logging requirements (Articles 9, 13, 14, 15, 17, 72).
+
+## Architecture
+
+```
+Your AI Agent
+     │
+     └── @agentaudit-xyz/sdk
+              │
+              ▼
+     AuditVault.sol  (Mantle / Arbitrum / any EVM)
+              │
+              ▼
+     Immutable on-chain log
+     queryable by agentId, sessionId, timestamp
+```
+
+## Quick Start
+
+```bash
+npm install @agentaudit-xyz/sdk
+```
+
+```typescript
+import { AgentAudit } from '@agentaudit-xyz/sdk'
+
+const audit = new AgentAudit({
+  rpcUrl:          'https://rpc.sepolia.mantle.xyz',
+  contractAddress: '0xYourAuditVaultAddress',
+  privateKey:      process.env.AGENT_PRIVATE_KEY,
+})
+
+await audit.registerAgent('my-defi-agent', {
+  model:   'gpt-4o',
+  version: '1.0.0',
+  owner:   '0xYourWallet',
+})
+
+const result = await audit.logAction({
+  agentId:    'my-defi-agent',
+  actionType: 'TRANSFER',
+  payload:    { to: '0xabc...', amount: '500 USDC' },
+})
+
+console.log('On-chain:', result.txHash)
+```
+
+## Batch Logging (Gas Efficient)
+
+```typescript
+await audit.logActionBatch('my-defi-agent', [
+  { actionType: 'PRICE_CHECK', payload: { pair: 'ETH/USDC' } },
+  { actionType: 'SWAP',        payload: { from: 'ETH', to: 'USDC', amount: '1.2' } },
+  { actionType: 'TRANSFER',    payload: { to: '0xabc...', amount: '3100 USDC' } },
+])
+```
+
+## Read the Audit Log
+
+```typescript
+const log = await audit.getAuditLog('my-defi-agent')
+console.log(`${log.length} actions recorded`)
+
+const entry = await audit.getAuditEntry('my-defi-agent', 0)
+console.log(entry.actionType, entry.timestamp)
+```
+
+## Repository Structure
+
+```
+AgentAudit/
+├── contracts/
+│   └── AuditVault.sol      ← Core smart contract
+├── sdk/
+│   ├── src/
+│   │   └── index.ts        ← TypeScript SDK
+│   └── package.json
+├── index.html              ← Landing page (getagentaudit.xyz)
+└── README.md
+```
 
 ## ElizaOS Integration
 
@@ -9,8 +116,6 @@ cd plugin-elizaos
 npm install
 ```
 
-Add to your ElizaOS agent:
-
 ```javascript
 const agentAuditPlugin = require('./plugin-elizaos');
 // add to plugins array in your ElizaOS config
@@ -20,8 +125,6 @@ Every agent message is automatically logged to the blockchain as an immutable au
 
 ✅ Live on Arbitrum Sepolia — TX: `0xecb8a7b3676d6e2c24cf1110351de5192a2102ca386ecebba2fe91aa1bfdee5f`
 
----
-
 ## Supported Networks
 
 | Network | Status |
@@ -29,8 +132,6 @@ Every agent message is automatically logged to the blockchain as an immutable au
 | Mantle Sepolia Testnet | 🟡 Deploy with AuditVault.sol |
 | Arbitrum One | 🟡 Deploy with AuditVault.sol |
 | Any EVM chain | ✅ Self-deploy |
-
----
 
 ## EU AI Act Compliance
 
@@ -52,8 +153,6 @@ EU AI Act Article 72 requires providers to systematically collect and document p
 AgentAudit satisfies this requirement by design: every agent action is written to an immutable on-chain log — creating a permanent, tamper-proof record that regulators, auditors, and deployers can query at any time.
 
 No manual reporting. No data gaps. Continuous compliance by default.
-
----
 
 ## KYA — Know Your Agent
 
@@ -94,11 +193,7 @@ await audit.registerAgent('my-defi-agent', {
 
 A KYA credential is automatically issued on registration.
 
----
-
 ## Part of RunLockAI
-
-AgentAudit is one module in the RunLockAI ecosystem:
 
 | Project | Role |
 |---|---|
@@ -106,8 +201,6 @@ AgentAudit is one module in the RunLockAI ecosystem:
 | AgentAudit | On-chain audit logging |
 | AgentPay | Autonomous payment rails |
 | StableSwitch | Stablecoin routing |
-
----
 
 ## License
 
